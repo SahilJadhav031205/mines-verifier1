@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mines Bomb Verifier</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f7f7f7; }
+    input, button { margin: 5px 0; padding: 8px; width: 100%; }
+    #result { margin-top: 15px; background: #fff; padding: 10px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+  <h2>Mines Bomb Verifier</h2>
+
+  <label>Server Seed:</label>
+  <input type="text" id="serverSeed" value="myserverseed123">
+
+  <label>Client Seed:</label>
+  <input type="text" id="clientSeed" value="userclient456">
+
+  <label>Nonce:</label>
+  <input type="number" id="nonce" value="7">
+
+  <label>Grid Size (e.g., 25 for 5x5):</label>
+  <input type="number" id="gridSize" value="25">
+
+  <label>Number of Bombs:</label>
+  <input type="number" id="numBombs" value="5">
+
+  <button onclick="calculateBombs()">Show Bomb Positions</button>
+
+  <div id="result"></div>
+
+  <script>
+    function sha256(input) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(input);
+      return crypto.subtle.digest('SHA-256', data).then(buffer => {
+        return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+      });
+    }
+
+    async function calculateBombs() {
+      const serverSeed = document.getElementById("serverSeed").value;
+      const clientSeed = document.getElementById("clientSeed").value;
+      const nonce = document.getElementById("nonce").value;
+      const gridSize = parseInt(document.getElementById("gridSize").value);
+      const numBombs = parseInt(document.getElementById("numBombs").value);
+
+      const combined = `${serverSeed}:${clientSeed}:${nonce}`;
+      const hash = await sha256(combined);
+      const rng = new Math.seedrandom(hash);
+
+      const positions = [];
+      const available = Array.from({ length: gridSize }, (_, i) => i);
+
+      for (let i = 0; i < numBombs; i++) {
+        const index = Math.floor(rng() * available.length);
+        positions.push(available.splice(index, 1)[0]);
+      }
+
+      document.getElementById("result").innerHTML =
+        "<strong>Bomb Positions:</strong> " + positions.sort((a,b) => a-b).join(", ");
+    }
+
+    // Seedrandom library
+    /*! seedrandom.js */
+    (function(f,a,c){var s,l=256,p="random",u=c.pow(l,6),d=c.pow(2,52),m=2*d,n=l-1;
+    function A(r,t,e){function i(){for(var a=f.g,h=a.k,b=0;b<l;++b)a.S[b]=b;
+    for(b=0;b<l;++b)a.S[b]=a.S[b]+h[b%h.length]&n;for(b=0;b<l;++b)a.S[b]=(a.S[b]+a.S[b+1&n])&n;for(b=0;b<l;++b)a.S[b]=(a.S[b]+a.S[b+1&n])&n}
+    function o(){var a=f.g,b=a.S,c=a.i=a.i+1&n,d=a.j=a.j+b[c]&n,e=b[c];return b[c]=b[d],
+    b[d]=e,(b[c]+b[d]&n)/l}return f.g={k:t,S:Array(l),i:0,j:0},i(),function(){return o()}}
+
+    function B(b,e,a){return a&&(b=""+b),e==null&&(e=b),A(null,b,e)}
+
+    a["seedrandom"]=B;
+    })(this,[],Math);
+  </script>
+
+</body>
+</html>
